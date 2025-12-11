@@ -8,7 +8,7 @@ finetuning_type: lora
 lora_target: all
 
 ### Dataset
-dataset: alpaca_en_demo               # Replace with actual dataset name or use 'custom' with train_file
+dataset: alpaca_en_demo              # Replace with actual dataset name or use 'custom' with train_file
 template: gemma                      # Gemma has its own template; use 'gemma' instead of 'llama3'
 cutoff_len: 1024
 max_samples: 1000
@@ -27,7 +27,7 @@ plot_loss: true
 per_device_train_batch_size: 1
 gradient_accumulation_steps: 4
 learning_rate: 1e-4
-num_train_epochs: 3
+num_train_epochs: 1
 lr_scheduler_type: cosine
 warmup_ratio: 0.03
 fp16: true
