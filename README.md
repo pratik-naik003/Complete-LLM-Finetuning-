@@ -5309,6 +5309,262 @@ from langchain_huggingface import HuggingFacePipeline
 
 (End of Notes)
 
+# BERT Fine-Tuning (Simple English Notes)
+
+## 1. What is BERT?
+
+* BERT = **Bidirectional Encoder Representations from Transformers**
+* Created by Google (2019)
+* Used for NLP tasks like:
+
+  * Text Classification
+  * Question Answering
+  * Named Entity Recognition (NER)
+  * Summarization
+
+👉 Important:
+
+* BERT is **NOT a generative model** (unlike GPT)
+* It is an **encoder-only transformer model** fileciteturn0file0
+
+---
+
+## 2. BERT Architecture (Simple)
+
+* Based on Transformer
+* Uses only **Encoder part**
+
+### Variants:
+
+* BERT Base → 12 encoder layers
+* BERT Large → 24 encoder layers fileciteturn0file0
+
+---
+
+## 3. How BERT is Trained
+
+### Step 1: Pre-training (Unsupervised / Self-supervised)
+
+* Data: Huge internet text
+* Techniques:
+
+  * Masked Language Model (MLM)
+  * Next Sentence Prediction (NSP)
+
+### Step 2: Fine-tuning (Supervised)
+
+* Train on specific task like classification
+
+---
+
+## 4. Fine-Tuning Concept
+
+Fine-tuning = Training a pre-trained model on your own dataset
+
+Types:
+
+* Full fine-tuning → train all layers
+* Partial → train some layers
+* Only head → train last layer
+
+---
+
+## 5. BERT Pipeline (How it Works)
+
+Sentence → BERT Encoder → Vector → Task Head → Output
+
+### Task Head:
+
+* Small neural network (Dense + Softmax)
+* Changes depending on task
+
+---
+
+## 6. Where BERT is Used Today
+
+* Search & Retrieval (RAG embeddings)
+* Text classification (cheap & fast)
+* NER tasks
+* Low-resource systems
+* Multilingual NLP
+
+---
+
+## 7. Practical Implementation (Code)
+
+### Install Libraries
+
+```python
+!pip install transformers datasets
+```
+
+### Import Libraries
+
+```python
+from datasets import load_dataset
+from transformers import (
+    BertTokenizer,
+    BertForSequenceClassification,
+    Trainer,
+    TrainingArguments
+)
+```
+
+---
+
+## 8. Load Dataset
+
+```python
+dataset = load_dataset("imdb")
+
+train_data = dataset["train"].select(range(1000))
+test_data = dataset["test"].select(range(500))
+```
+
+---
+
+## 9. Tokenization
+
+```python
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+
+
+def tokenize_function(example):
+    return tokenizer(
+        example["text"],
+        padding="max_length",
+        truncation=True,
+        max_length=256
+    )
+
+train_data = train_data.map(tokenize_function, batched=True)
+test_data = test_data.map(tokenize_function, batched=True)
+```
+
+---
+
+## 10. Format Dataset
+
+```python
+train_data = train_data.rename_column("label", "labels")
+test_data = test_data.rename_column("label", "labels")
+
+train_data.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
+test_data.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
+```
+
+---
+
+## 11. Load Model
+
+```python
+model = BertForSequenceClassification.from_pretrained(
+    "bert-base-uncased",
+    num_labels=2
+)
+```
+
+---
+
+## 12. Training Arguments
+
+```python
+training_args = TrainingArguments(
+    output_dir="./results",
+    num_train_epochs=3,
+    per_device_train_batch_size=8,
+    learning_rate=2e-5,
+    weight_decay=0.01,
+    logging_dir="./logs",
+)
+```
+
+---
+
+## 13. Trainer Setup
+
+```python
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_data,
+    eval_dataset=test_data,
+)
+```
+
+---
+
+## 14. Train Model
+
+```python
+trainer.train()
+```
+
+---
+
+## 15. Evaluate Model
+
+```python
+trainer.evaluate()
+```
+
+---
+
+## 16. Save Model
+
+```python
+trainer.save_model("./bert-finetuned")
+tokenizer.save_pretrained("./bert-finetuned")
+```
+
+---
+
+## 17. Prediction (Inference)
+
+```python
+from transformers import pipeline
+
+classifier = pipeline(
+    "text-classification",
+    model="./bert-finetuned",
+    tokenizer=tokenizer
+)
+
+result = classifier("This movie was amazing!")
+print(result)
+```
+
+---
+
+## 18. Key Interview Points
+
+* BERT is encoder-only (not generative)
+* Uses MLM + NSP training
+* Fine-tuning adapts it for tasks
+* Head changes per task
+* Still useful for embeddings & lightweight NLP
+
+---
+
+## 19. Important Notes
+
+* BERT is fast and cheaper than LLMs
+* But less powerful than GPT models
+* Still used in production systems
+
+---
+
+## 20. Summary
+
+* Pre-train → General knowledge
+* Fine-tune → Specific task
+* Use Hugging Face for implementation
+
+---
+
+## End 🚀
+
+
 
 
 
