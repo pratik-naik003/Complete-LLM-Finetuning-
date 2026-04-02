@@ -5841,15 +5841,255 @@ These notes are based on your provided explanation and concepts from training, s
 
 ---
 
-# 💡 Next Steps
+# LLM Knowledge Distillation part 2
 
-You should learn next:
+## 1. What is Knowledge Distillation?
 
-* Quantization
-* Pruning
-* LLM fine-tuning pipelines
+Knowledge Distillation is a technique where:
+
+* A **large model (Teacher)** teaches a **small model (Student)**
+* Goal: Make a smaller, faster model with almost same performance
+
+Example:
+
+* Teacher → BERT Large
+* Student → BERT Base / DistilBERT
 
 ---
+
+## 2. Teacher vs Student Model
+
+| Model   | Description                         |
+| ------- | ----------------------------------- |
+| Teacher | Big, accurate, slow                 |
+| Student | Small, fast, slightly less accurate |
+
+The teacher is already trained on large data and knows patterns.
+The student learns from teacher outputs.
+
+---
+
+## 3. Soft Labels vs Hard Labels
+
+### Hard Labels
+
+* Actual ground truth
+* Example: [1, 0, 0]
+
+### Soft Labels
+
+* Probabilities from model
+* Example: [0.7, 0.2, 0.1]
+
+👉 Soft labels contain more information than hard labels.
+
+---
+
+## 4. Key Idea of Distillation
+
+Instead of training student only on real labels,
+we train using:
+
+1. Teacher predictions (soft labels)
+2. Actual labels (hard labels)
+
+---
+
+## 5. Loss Function in Distillation
+
+Final Loss = Combination of:
+
+* Cross Entropy Loss (with hard labels)
+* KL Divergence Loss (with soft labels)
+
+### Formula (Conceptual):
+
+```
+Loss = (1 - alpha) * CrossEntropy + alpha * KL_Divergence
+```
+
+---
+
+## 6. Cross Entropy Loss (Hard Labels)
+
+Used to compare:
+
+* Actual label vs student prediction
+
+### Example:
+
+```python
+import torch.nn as nn
+
+loss_fn = nn.CrossEntropyLoss()
+loss = loss_fn(student_logits, labels)
+```
+
+---
+
+## 7. KL Divergence Loss (Soft Labels)
+
+Used to compare:
+
+* Teacher probabilities vs Student probabilities
+
+### Example:
+
+```python
+import torch.nn.functional as F
+
+loss_kl = F.kl_div(
+    F.log_softmax(student_logits / T, dim=1),
+    F.softmax(teacher_logits / T, dim=1),
+    reduction='batchmean'
+)
+```
+
+---
+
+## 8. Temperature (T)
+
+* Controls softness of probabilities
+* Higher T → smoother probabilities
+
+Example:
+
+```python
+T = 2
+```
+
+---
+
+## 9. Complete Training Idea
+
+Steps:
+
+1. Pass input to Teacher → get soft labels
+2. Pass input to Student → get predictions
+3. Compute:
+
+   * KL loss (teacher vs student)
+   * CE loss (student vs real label)
+4. Combine losses
+5. Backpropagation on student only
+
+---
+
+## 10. Simple Training Code (PyTorch)
+
+```python
+teacher.eval()
+student.train()
+
+for batch in dataloader:
+    inputs, labels = batch
+
+    with torch.no_grad():
+        teacher_logits = teacher(inputs).logits
+
+    student_logits = student(inputs).logits
+
+    # Losses
+    loss_ce = loss_fn(student_logits, labels)
+
+    loss_kl = F.kl_div(
+        F.log_softmax(student_logits / T, dim=1),
+        F.softmax(teacher_logits / T, dim=1),
+        reduction='batchmean'
+    )
+
+    loss = (1 - alpha) * loss_ce + alpha * loss_kl
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+```
+
+---
+
+## 11. Why Distillation is Useful?
+
+* Smaller model size
+* Faster inference
+* Less memory usage
+* Works on mobile / low devices
+
+Example facts:
+
+* DistilBERT → 40% smaller, 60% faster
+* Still ~97% performance of BERT fileciteturn0file0
+
+---
+
+## 12. Can Student be Better than Teacher?
+
+Yes, sometimes because:
+
+* Better fine-tuning
+* Less overfitting
+* Task-specific training
+
+---
+
+## 13. Distillation vs Fine-Tuning
+
+| Feature    | Fine-Tuning         | Distillation               |
+| ---------- | ------------------- | -------------------------- |
+| Data       | Only labels         | Labels + Teacher outputs   |
+| Goal       | Task-specific model | Smaller model like teacher |
+| Output     | Hard labels         | Soft + Hard labels         |
+| Model Size | Same                | Smaller                    |
+
+---
+
+## 14. Where to Use Distillation?
+
+Use when:
+
+* Need fast model
+* Low memory device
+* Real-time applications
+
+Avoid when:
+
+* No resource constraints
+* Maximum accuracy required
+
+---
+
+## 15. LLM Distillation (Important)
+
+Same concept applied to LLMs:
+
+* Teacher → GPT, LLaMA, etc.
+* Student → Smaller LLM
+
+Process:
+
+* Use teacher outputs (logits / probabilities)
+* Train smaller model using same loss
+
+---
+
+## 16. Key Takeaways
+
+* Distillation = Transfer knowledge from big → small model
+* Uses both soft + hard labels
+* Uses combined loss (CE + KL)
+* Makes models efficient and fast
+
+---
+
+## 17. Final Understanding
+
+👉 Teacher teaches *how to think* (probabilities)
+👉 Labels teach *what is correct*
+👉 Student learns both
+
+---
+
+END 🚀
+
 
 
 
