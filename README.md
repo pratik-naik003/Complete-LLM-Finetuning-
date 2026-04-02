@@ -6503,4 +6503,176 @@ quantized_model = quant.convert(model, inplace=True)
 
 ---
 
+# 📘 Quantization Aware Training (QAT) – Complete Notes
+
+## 🚀 What is QAT?
+
+Quantization Aware Training (QAT) is a technique where a model is trained while **simulating quantization effects**.
+
+👉 Simple idea:
+
+> Train + Quantization together
+
+---
+
+## 🧠 Why QAT?
+
+In Post-Training Quantization (PTQ):
+
+* Model is unaware of quantization
+* Accuracy may drop
+
+In QAT:
+
+* Model learns quantization errors during training
+* Accuracy remains close to FP32
+
+---
+
+## 🔥 Core Idea
+
+QAT uses **Fake Quantization Layers** during training.
+
+These layers:
+
+* Convert values to INT8 (simulation)
+* Convert back to FP32
+
+👉 This allows gradient flow while simulating real quantization
+
+---
+
+## ⚙️ How It Works
+
+### Forward Pass
+
+```
+FP32 → Fake Quant → INT8 → Back to FP32
+```
+
+### Training
+
+* Loss is computed normally
+* Backpropagation works normally
+* Model updates weights to reduce quantization error
+
+---
+
+## 📦 Fake Quantization Formula
+
+```
+q = round(x / scale) + zero_point
+x_hat = scale * (q - zero_point)
+```
+
+👉 This introduces small error during training
+
+---
+
+## 🧪 Example
+
+Original value:
+
+```
+x = 100
+```
+
+After fake quantization:
+
+```
+q = 128
+x_hat ≈ 100.3
+```
+
+👉 Model learns to handle this small error
+
+---
+
+## ⚡ QAT vs PTQ
+
+* QAT: Applied during training, high accuracy
+* PTQ: Applied after training, faster but slight accuracy loss
+
+---
+
+## 💻 TensorFlow Implementation (QAT)
+
+```python
+import tensorflow as tf
+import tensorflow_model_optimization as tfmot
+
+# Step 1: Create model
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(64, activation='relu', input_shape=(10,)),
+    tf.keras.layers.Dense(1)
+])
+
+# Step 2: Apply QAT
+quantize_model = tfmot.quantization.keras.quantize_model
+qat_model = quantize_model(model)
+
+# Step 3: Compile
+qat_model.compile(optimizer='adam', loss='mse')
+
+# Step 4: Train model
+qat_model.fit(x, y, epochs=5)
+
+# Step 5: Convert to TFLite
+converter = tf.lite.TFLiteConverter.from_keras_model(qat_model)
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+
+tflite_model = converter.convert()
+```
+
+---
+
+## 🔥 What Happens in QAT?
+
+* Fake quant layers simulate INT8 behavior
+* Model adapts to quantization noise
+* Final model = small + accurate
+
+---
+
+## ✅ Advantages
+
+* High accuracy after quantization
+* Better than PTQ for low-bit models
+
+---
+
+## ❌ Disadvantages
+
+* Requires training
+* More complex than PTQ
+
+---
+
+## 🎯 When to Use QAT?
+
+Use QAT when:
+
+* Accuracy is very important
+* PTQ results are not good
+* You are already training or fine-tuning a model
+
+---
+
+## 🧠 Interview Tip
+
+👉 “QAT simulates quantization during training using fake quantization layers, allowing the model to learn and adapt to quantization errors, resulting in better accuracy than PTQ.”
+
+---
+
+## 📌 Summary
+
+QAT is a powerful technique for deploying efficient and accurate models.
+
+👉 Best for:
+
+* Production systems
+* Edge devices
+* High-accuracy requirements
+
+
 
