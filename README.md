@@ -6323,7 +6323,184 @@ Quantization is essential for running large AI models efficiently.
 * Models become practical for real-world use
 
 ---
+# 📘 Post-Training Quantization (PTQ) – Complete Notes
 
-## Source
+## 🚀 What is PTQ?
 
-Based on notes from uploaded file: fileciteturn0file0
+Post-Training Quantization (PTQ) is a technique where we take a **trained model** and convert its weights from high precision (FP32) to low precision (INT8) **without retraining**.
+
+👉 Simple idea:
+
+> Train first → Compress later
+
+---
+
+## 🎯 Why PTQ?
+
+* Reduces model size (4× smaller)
+* Faster inference
+* Works without retraining
+* Useful for running models on low-end devices
+
+---
+
+## 🧠 Step-by-Step Example
+
+### Step 1: Original Weights (FP32)
+
+```
+W = [0, 50, 100, 150, 200]
+```
+
+---
+
+### Step 2: Calibration
+
+We pass some sample data through the model and observe the range:
+
+```
+x_min = 0
+x_max = 200
+```
+
+---
+
+### Step 3: Define INT8 Range
+
+```
+q_min = 0
+q_max = 255
+```
+
+---
+
+### Step 4: Compute Scale
+
+```
+scale = (x_max - x_min) / (q_max - q_min)
+```
+
+```
+scale = (200 - 0) / 255 ≈ 0.784
+```
+
+---
+
+### Step 5: Zero Point
+
+```
+zero_point = 0
+```
+
+---
+
+### Step 6: Quantization
+
+Formula:
+
+```
+q = round(x / scale) + zero_point
+```
+
+Converted values:
+
+* 0 → 0
+* 50 → 64
+* 100 → 128
+* 150 → 191
+* 200 → 255
+
+```
+W_int8 = [0, 64, 128, 191, 255]
+```
+
+---
+
+### Step 7: Dequantization
+
+```
+x_hat = scale × (q - zero_point)
+```
+
+Example:
+
+```
+128 → 0.784 × 128 ≈ 100.3
+```
+
+👉 Very close to original value
+
+---
+
+## ⚡ Key Idea
+
+* Float → Integer mapping using:
+
+  * Scale
+  * Zero-point
+
+* Small precision loss is acceptable
+
+---
+
+## 🧪 PTQ Workflow
+
+1. Take trained model
+2. Add observers
+3. Run calibration data
+4. Compute scale & zero-point
+5. Convert model to INT8
+
+---
+
+## 💻 PyTorch Implementation
+
+```python
+import torch
+import torch.quantization as quant
+
+model.eval()
+
+model.qconfig = quant.get_default_qconfig('fbgemm')
+
+quant.prepare(model, inplace=True)
+
+# Calibration step
+for data in calibration_loader:
+    model(data)
+
+quantized_model = quant.convert(model, inplace=True)
+```
+
+---
+
+## ✅ Advantages
+
+* No retraining required
+* Easy to apply
+* Faster deployment
+
+---
+
+## ❌ Disadvantages
+
+* Small accuracy drop
+* Not ideal for very low-bit (like INT4)
+
+---
+
+## 🎯 When to Use PTQ?
+
+* When model is already trained
+* When you need quick optimization
+* When hardware resources are limited
+
+---
+
+## 🧠 Interview Tip
+
+👉 “PTQ reduces model size by converting FP32 weights to INT8 using calibration data without retraining, but may introduce minor accuracy loss.”
+
+---
+
+
